@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tic Tac Toe</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="mx-auto py-8">
+        <div class="mx-auto p-4 rounded-lg bg-slate-200 shadow w-max">
+            <img src="./doug.png" alt="doug" width="949" height="868" class="max-w-32 rounded-md" />
+        </div>
+        <div class="mt-6">
+            <p class="text-center text-xl underline">Score</p>
+            <div class="mt-2 flex justify-center space-x-12">
+                <div>
+                    <p class="font-bold text-3xl text-center">X</p>
+                    <p class="text-center text-xl mt-2" id="score-x">0</p>
+                </div>
+                <div>
+                    <p class="font-bold text-3xl text-center">O</p>
+                    <p class="text-center text-xl mt-2" id="score-o">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="mt-6 mx-auto w-max space-y-2" id="boxes-container">
+            <div class="flex space-x-2">
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="0"
+                >
+                    X
+                </button>
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="1"
+                >
+                    O
+                </button>
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="2"
+                >
+                    X
+                </button>
+            </div>
+            <div class="flex space-x-2">
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="3"
+                >
+                    X
+                </button>
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="4"
+                >
+                    X
+                </button>
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="5"
+                >
+                    X
+                </button>
+            </div>
+            <div class="flex space-x-2">
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="6"
+                >
+                    X
+                </button>
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="7"
+                >
+                    X
+                </button>
+                <button
+                    class="rounded w-24 h-24 p-4 flex items-center justify-center text-6xl border-2 border-slate-300"
+                    data-position="8"
+                >
+                    X
+                </button>
+            </div>
+            <div
+                class="mt-4 border-2 border-slate-300 bg-slate-100 p-4 flex justify-center rounded"
+                id="player-info"
+            >
+                Current player:&nbsp;<span class="font-bold" data-player></span>
+            </div>
+            <div
+                class="hidden mt-4 border-2 border-green-300 bg-green-100 p-4 justify-center rounded"
+                id="win-alert"
+            >
+                Player&nbsp;<span class="font-bold" id="win-alert-player"></span>&nbsp;wins
+            </div>
+            <div
+                class="hidden mt-4 border-2 border-blue-300 bg-blue-100 p-4 justify-center rounded"
+                id="draw-alert"
+            >
+                Game&nbsp;<span class="font-bold">draw</span>
+            </div>
+        </div>
+        <div class="mt-6 hidden justify-center" id="play-again">
+            <button
+                id="play-again-button"
+                class="underline text-lg focus:outline-slate-300 focus:outline focus:outline-offset-4"
+            >
+                Play again
+            </button>
+        </div>
+
+        <script>
+            function checkGame(positions) {
+                const winningConditions = [
+                    [0, 1, 2],
+                    [3, 4, 5],
+                    [6, 7, 8],
+                    [0, 3, 6],
+                    [1, 4, 7],
+                    [2, 5, 8],
+                    [0, 4, 8],
+                    [2, 4, 6],
+                ];
+
+                for (const cond of winningConditions) {
+                    const posBox1 = cond[0];
+                    const posBox2 = cond[1];
+                    const posBox3 = cond[2];
+
+                    if (
+                        positions[posBox1] !== null &&
+                        positions[posBox1] === positions[posBox2] &&
+                        positions[posBox1] === positions[posBox3]
+                    ) {
+                        return { status: 'win', player: positions[posBox1], boxes: cond };
+                    }
+                }
+
+                for (const pos of positions) {
+                    if (pos === null) {
+                        return { status: 'ongoing' };
+                    }
+                }
+
+                return { status: 'draw' };
+            }
+            // ------------------------------------------------------------------------------
+
+            const initStore = (renderFn) => {
+                const initialPositions = Array(9).fill(null);
+                const state = {
+                    nextPosition: 'X',
+                    positions: [...initialPositions],
+                    score: {
+                        X: 0,
+                        O: 0,
+                    },
+                };
+
+                function fillBox(position) {
+                    if (state.positions[position]) return;
+                    let game = checkGame(state.positions);
+                    if (game.status !== 'ongoing') return;
+
+                    state.positions[position] = state.nextPosition;
+
+                    game = checkGame(state.positions);
+
+                    if (game.status !== 'ongoing') {
+                        onDone(game);
+                        return;
+                    }
+
+                    state.nextPosition = state.nextPosition === 'X' ? 'O' : 'X';
+                }
+
+                function onDone(game) {
+                    if (game.status === 'win') {
+                        state.score[game.player]++;
+                    }
+                    reRender();
+                }
+
+                const actions = {
+                    onBoxClick(e) {
+                        if (!e.target.dataset.position) return;
+                        const position = Number(e.target.dataset.position);
+                        fillBox(position);
+                        reRender();
+                    },
+                    onPlayAgain() {
+                        state.positions = [...initialPositions];
+                        state.nextPosition = 'X';
+                        reRender();
+                    },
+                };
+
+                function reRender() {
+                    renderFn({ ...state, ...actions });
+                }
+
+                return {
+                    ...state,
+                    ...actions,
+                };
+            };
+
+            // ------------------------------------------------------------------------------
+
+            function renderBoxes(store) {
+                const game = checkGame(store.positions);
+                const boxes = game.boxes;
+                for (let i = 0; i < 9; i++) {
+                    const boxEl = document.querySelector(`[data-position="${i}"]`);
+
+                    boxEl.classList.remove('bg-green-100');
+                    boxEl.classList.remove('border-green-200');
+                    boxEl.classList.add('bg-white');
+                    boxEl.classList.add('border-slate-300');
+
+                    if (boxes && boxes.includes(i)) {
+                        boxEl.classList.remove('bg-white');
+                        boxEl.classList.remove('border-slate-300');
+                        boxEl.classList.add('bg-green-100');
+                        boxEl.classList.add('border-green-200');
+                    }
+
+                    boxEl.textContent = store.positions[i];
+                }
+
+                const containerEl = document.querySelector('#boxes-container');
+                containerEl.addEventListener('click', store.onBoxClick);
+            }
+
+            function renderPlayer(store) {
+                const playerEl = document.querySelector('[data-player]');
+                playerEl.textContent = store.nextPosition;
+            }
+
+            function renderAlert(store) {
+                const game = checkGame(store.positions);
+                const alertEl = document.querySelector('#win-alert');
+                const drawEl = document.querySelector('#draw-alert');
+                const playerInfoEl = document.querySelector('#player-info');
+
+                if (game.status === 'ongoing') {
+                    playerInfoEl.classList.add('flex');
+                    playerInfoEl.classList.remove('hidden');
+                    alertEl.classList.remove('flex');
+                    alertEl.classList.add('hidden');
+                    drawEl.classList.remove('flex');
+                    drawEl.classList.add('hidden');
+                }
+
+                if (game.status !== 'ongoing') {
+                    playerInfoEl.classList.remove('flex');
+                    playerInfoEl.classList.add('hidden');
+                }
+
+                if (game.status === 'win') {
+                    const textEl = document.querySelector('#win-alert-player');
+
+                    alertEl.classList.remove('hidden');
+                    alertEl.classList.add('flex');
+                    textEl.textContent = game.player;
+                }
+
+                if (game.status === 'draw') {
+                    drawEl.classList.remove('hidden');
+                    drawEl.classList.add('flex');
+                }
+            }
+
+            function renderPlayAgain(store) {
+                const game = checkGame(store.positions);
+                const containerEl = document.querySelector('#play-again');
+                const buttonEl = document.querySelector('#play-again-button');
+
+                buttonEl.addEventListener('click', store.onPlayAgain);
+
+                if (game.status === 'ongoing') {
+                    containerEl.classList.add('hidden');
+                    containerEl.classList.remove('flex');
+                } else {
+                    containerEl.classList.remove('hidden');
+                    containerEl.classList.add('flex');
+                }
+            }
+
+            function renderScore(store) {
+                const xEl = document.querySelector('#score-x');
+                const oEl = document.querySelector('#score-o');
+
+                xEl.textContent = store.score.X;
+                oEl.textContent = store.score.O;
+            }
+
+            // ------------------------------------------------------------------------------
+
+            function render(store) {
+                renderBoxes(store);
+                renderPlayer(store);
+                renderAlert(store);
+                renderPlayAgain(store);
+                renderScore(store);
+            }
+
+            const store = initStore(render);
+            render(store);
+        </script>
+    </body>
+</html>
